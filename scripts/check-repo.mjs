@@ -12,7 +12,9 @@ const rejected = files.filter(file => /(^|\/)(node_modules|dist|ref|\.backup|tes
 if (rejected.length) throw new Error(`Unexpected publishable files: ${rejected.join(', ')}`);
 for (const file of files.filter(file => /\.(m?js|json|md|html|ya?ml)$/.test(file))) {
   const content = fs.readFileSync(path.join(root, file), 'utf8');
-  if (/\/Users\/[A-Za-z0-9_.-]+\//.test(content) || /(?:AKIA[0-9A-Z]{16}|sk-[A-Za-z0-9]{30,})/.test(content)) throw new Error(`Local path or credential-like content: ${file}`);
+  if (/(?:\/Users\/[A-Za-z0-9_.-]+\/|\/home\/[A-Za-z0-9_.-]+\/)/.test(content)
+    || /(?:AKIA[0-9A-Z]{16}|sk-[A-Za-z0-9]{30,}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{30,}|-----BEGIN (?:RSA |OPENSSH |EC )?PRIVATE KEY-----)/.test(content)
+    || /[A-Za-z0-9._%+-]+@(?:qq|163|126|gmail|outlook|hotmail)\.com/i.test(content)) throw new Error(`Private path, contact or credential-like content: ${file}`);
   if (file.endsWith('.md')) for (const match of content.matchAll(/!?\[[^\]]*\]\(([^)]+)\)/g)) {
     const target = match[1].split('#')[0];
     if (!target || /^[a-z][a-z0-9+.-]*:/i.test(target)) continue;

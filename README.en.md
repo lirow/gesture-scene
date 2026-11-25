@@ -6,7 +6,7 @@ Camera-driven 3D particle scenes: open your hand to expand, make a fist to gathe
 move your hand to rotate, and pinch to pick up a photo. A static browser application
 built with MediaPipe Hand Landmarker and three.js.
 
-![Christmas particle scene](docs/images/xmas.png)
+![Live particle showcase](docs/images/showcase.png)
 
 ## Features
 
@@ -28,7 +28,8 @@ npm ci
 npm run serve
 ```
 
-Open **http://localhost:8123/** and allow camera access. Installation prepares three.js and
+Open **http://localhost:8123/** for the live particle showcase, which needs neither a camera nor a model.
+Choose a preset and enter its full scene to enable the camera. Installation prepares three.js and
 MediaPipe runtime files from the locked npm packages; no manual vendor copies are needed.
 
 The first camera session downloads the hand model. To prepare a local copy in advance:
@@ -42,7 +43,7 @@ copy of the same model, use `npm run setup:model -- /path/to/hand_landmarker.tas
 Downloads depend on your network; keyboard and drag controls remain available if model loading fails.
 The model is separate from the code license; see [Third-Party Notices](THIRD_PARTY_NOTICES.md).
 
-Preview without a camera at **http://localhost:8123/?nocam=1**. Select the Christmas preset with
+Preview the full scene without a camera at **http://localhost:8123/scene.html?nocam=1**. Select the Christmas preset with
 `?preset=xmas2026`; the default is `heart`. Combine query parameters with `&`.
 
 ## Controls
@@ -99,7 +100,7 @@ npm run dist
 npm run preview
 ```
 
-`dist/` contains the default heart page `index.html`, `heart.html`, `xmas.html`, runtime files,
+`dist/` contains the live particle showcase `index.html`, `heart.html`, `xmas.html`, runtime files,
 demo images, and license texts. **The model and custom albums are excluded.** Serve the complete
 directory over HTTPS. Subpath hosting is supported. Opening the HTML directly with `file://`
 does not provide full camera and model functionality.
@@ -141,6 +142,8 @@ To test the build without putting a model into the output, set `TEST_ROOT=dist` 
 ```text
 public/src/engine/       Gestures, rendering, images, audio, resource loading
 public/src/presets/      heart and xmas2026
+public/index.html       Camera-free live particle showcase
+public/scene.html       Full gesture scene entry
 public/photos/demo/     Original demo images and manifests
 scripts/                Runtime setup, model download, assets and build
 tests/                  Logic, HTTP, browser and camera checks

@@ -21,7 +21,7 @@ try {
       } else request.continue();
     });
   }
-  const entry = process.env.TEST_ROOT === 'dist' ? 'heart.html' : '';
+  const entry = process.env.TEST_ROOT === 'dist' ? 'heart.html' : 'scene.html';
   await page.goto(`${server.url}${entry}?ui=1`, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => document.getElementById('m-detect').textContent !== '-', { timeout: 90000 });
   await page.waitForFunction(() => window.__tree.progress > 0.8, { timeout: 15000 });

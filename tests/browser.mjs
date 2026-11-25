@@ -15,7 +15,7 @@ try {
     page.on('pageerror', error => errors.push(error.message));
     if (mobile) await page.setUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1');
     await page.setViewport({ width: mobile ? 390 : 1440, height: mobile ? 844 : 900, deviceScaleFactor: 1, isMobile: mobile, hasTouch: mobile });
-    const entry = process.env.TEST_ROOT === 'dist' ? (preset === 'heart' ? 'heart.html' : 'xmas.html') : '';
+    const entry = process.env.TEST_ROOT === 'dist' ? (preset === 'heart' ? 'heart.html' : 'xmas.html') : 'scene.html';
     await page.goto(`${server.url}${entry}?nocam=1&preset=${preset}`, { waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => window.__tree?.photoList?.length === 20
       && window.__tree.atlas?.validIndices?.length === Math.min(20, window.__tree.tier.photoCount)

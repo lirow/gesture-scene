@@ -5,7 +5,7 @@
 用摄像头手势操作的 3D 粒子场景：张开手掌展开、握拳收拢、挥手旋转、捏合抓取照片。
 纯静态前端，由 MediaPipe Hand Landmarker 和 three.js 驱动。
 
-![粉色爱心场景](docs/images/heart.png)
+![实时粒子首页](docs/images/showcase.png)
 
 ## 特性
 
@@ -26,7 +26,7 @@ npm ci
 npm run serve
 ```
 
-打开 **http://localhost:8123/**，允许摄像头访问。安装会从锁定的 npm 依赖准备本地
+打开 **http://localhost:8123/**，先进入无需摄像头和模型的实时粒子首页，切换题材后点「进入场景」再授权摄像头。安装会从锁定的 npm 依赖准备本地
 three.js 和 MediaPipe 运行时，不需要手动复制 `vendor/`。
 
 首次识别需要下载手势模型。想预先准备到本机，可以执行：
@@ -39,7 +39,7 @@ npm run setup:model
 `npm run setup:model -- /path/to/hand_landmarker.task`。下载受网络影响；模型获取失败时，
 页面仍保留键盘和拖动交互。模型独立于代码许可，详见[第三方说明](THIRD_PARTY_NOTICES.md)。
 
-无摄像头预览：**http://localhost:8123/?nocam=1**。切换题材：
+完整场景的无摄像头预览：**http://localhost:8123/scene.html?nocam=1**。切换题材：
 `?preset=xmas2026`；默认题材为 `heart`。多个查询参数用 `&` 连接。
 
 ## 操作
@@ -93,7 +93,7 @@ npm run dist
 npm run preview
 ```
 
-`dist/` 包含默认爱心页 `index.html`、`heart.html`、`xmas.html`、运行时、演示图片和许可文件；
+`dist/` 包含实时粒子首页 `index.html`、`heart.html`、`xmas.html`、运行时、演示图片和许可文件；
 **不包含模型与自定义相册**。把完整目录交给静态 HTTPS 服务即可，支持部署到子路径。
 仅双击 HTML 无法完整使用摄像头和模型加载。
 
@@ -132,6 +132,8 @@ CI 默认测试逻辑、浏览器渲染和构建；真机摄像头、音频听�
 ```text
 public/src/engine/       手势、渲染、图片、音效、资源加载
 public/src/presets/      heart 与 xmas2026 题材
+public/index.html       无需摄像头的实时粒子首页
+public/scene.html       完整手势场景入口
 public/photos/demo/     原创演示图与清单
 scripts/                运行时准备、模型获取、素材生成和构建
 tests/                  逻辑、HTTP、浏览器与摄像头测试

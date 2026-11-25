@@ -13,7 +13,7 @@
     "serve": "node serve.mjs",
     "preview": "node serve.mjs dist",
     "test": "node --test tests/*.test.mjs",
-    "test:browser": "node tests/browser.mjs",
+    "test:browser": "node tests/browser.mjs && node tests/showcase.mjs",
     "test:camera": "node tests/camera.mjs",
     "photos": "node scripts/prepare-photos.mjs",
     "demo:generate": "node scripts/create-demo-photos.mjs",

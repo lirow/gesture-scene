@@ -39,18 +39,25 @@ if (unexpected.length) throw new Error(`Use a clean build output; unexpected ent
 for (const [preset, name] of [['heart', 'heart.html'], ['xmas2026', 'xmas.html']]) {
   const result = await build({
     entryPoints: [path.join(publicRoot, 'src/main.js')], bundle: true,
-    format: 'esm', platform: 'browser', target: 'es2022', write: false,
+    format: 'esm', platform: 'browser', target: 'es2022', write: false, minify: true,
     legalComments: 'inline',
     define: { __PRESET__: JSON.stringify(preset), __ASSET_BASE__: JSON.stringify('./'), __HAS_CONFIG__: 'false' },
   });
   const code = result.outputFiles[0].text.replace(/<\/script/gi, '<\\/script');
-  const html = fs.readFileSync(path.join(publicRoot, 'index.html'), 'utf8')
+  const html = fs.readFileSync(path.join(publicRoot, 'scene.html'), 'utf8')
     .replace(/<script type="importmap">[\s\S]*?<\/script>\s*/i, '')
-    .replace('<script type="module" src="./src/main.js"></script>', `<script type="module">\n${code}\n</script>`);
+    .replace('<script type="module" src="./src/main.js"></script>', () => `<script type="module">\n${code}\n</script>`);
   fs.writeFileSync(path.join(output, name), html);
 }
-// The default build opens directly into the scene.
-fs.copyFileSync(path.join(output, 'heart.html'), path.join(output, 'index.html'));
+const showcase = await build({ entryPoints: [path.join(publicRoot, 'src/showcase.js')], bundle: true,
+  format: 'esm', platform: 'browser', target: 'es2022', write: false, minify: true, legalComments: 'inline',
+  define: { __SHOWCASE_BUILD__: 'true' },
+});
+const showcaseCode = showcase.outputFiles[0].text.replace(/<\/script/gi, '<\\/script');
+const showcaseHtml = fs.readFileSync(path.join(publicRoot, 'index.html'), 'utf8')
+  .replace(/<script type="importmap">[\s\S]*?<\/script>\s*/i, '')
+  .replace('<script type="module" src="./src/showcase.js"></script>', () => `<script type="module">\n${showcaseCode}\n</script>`);
+fs.writeFileSync(path.join(output, 'index.html'), showcaseHtml);
 for (const [from, to] of assets) fs.cpSync(path.join(publicRoot, from), path.join(output, to), { recursive: true });
 for (const file of ['LICENSE', 'LICENSES', 'THIRD_PARTY_NOTICES.md']) fs.cpSync(path.join(root, file), path.join(output, file), { recursive: true });
 function compress(directory) {
@@ -61,4 +68,4 @@ function compress(directory) {
   }
 }
 compress(output);
-console.log('Built dist/: default heart, heart.html, xmas.html; model and personal photos excluded.');
+console.log('Built dist/: particle showcase, heart.html, xmas.html; model and personal photos excluded.');
