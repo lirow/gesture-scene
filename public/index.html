@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+<meta name="theme-color" content="#05070d" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<link rel="icon" href="data:,">
+<title>Gesture Scene</title>
+<style>
+  :root { color-scheme: dark; --hud-bg: rgba(10,16,28,.62); --line: rgba(120,170,255,.18); }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    width: 100%; height: 100%; height: 100dvh;
+    overflow: hidden; background: #05070d;
+  }
+  body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    color: #dfe7f5;
+    overscroll-behavior: none;
+    touch-action: none;
+    user-select: none; -webkit-user-select: none;
+  }
+  #gl { display: block; width: 100vw; height: 100%; }
+
+  #cam {
+    position: fixed; right: 12px; bottom: 12px; width: 200px;
+    border-radius: 10px; opacity: .55; z-index: 5;
+    border: 1px solid rgba(140,180,255,.25);
+    transform: scaleX(-1);
+  }
+  #cam.mirror-off { transform: none; }
+  #cam.hidden { display: none; }
+
+  #hud {
+    position: fixed; left: 14px; top: 14px; font-size: 12px; line-height: 1.7;
+    font-family: ui-monospace, Menlo, monospace;
+    background: var(--hud-bg); border: 1px solid var(--line); border-radius: 10px;
+    padding: 10px 12px; z-index: 5; min-width: 208px;
+    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+    padding-top: max(10px, env(safe-area-inset-top));
+    transition: opacity .25s;
+  }
+  #hud.hidden { opacity: 0; pointer-events: none; }
+  #hud b { color: #8fd3ff; font-weight: 600; }
+  .k { color: #6b7f9e; }
+  #state { font-size: 15px; letter-spacing: .5px; }
+
+  #bar {
+    position: fixed; right: 14px; top: 14px; z-index: 6;
+    display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end;
+    max-width: calc(100vw - 260px);
+  }
+  #bar button {
+    font: inherit; font-size: 12px; color: #c7d6ea; cursor: pointer;
+    background: var(--hud-bg); border: 1px solid var(--line); border-radius: 9px;
+    padding: 7px 11px; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+    transition: border-color .2s, color .2s;
+  }
+  #bar button:hover { border-color: rgba(140,190,255,.45); color: #eaf3ff; }
+  #bar button:active { transform: translateY(1px); }
+
+  /* 后台加载角标：手势模型在后台下载时显示，不遮挡主体 */
+  #loadtip {
+    position: fixed; left: 50%; transform: translateX(-50%);
+    bottom: max(52px, calc(env(safe-area-inset-bottom) + 52px));
+    z-index: 6; padding: 7px 14px; font-size: 11.5px; color: #a8c4e6;
+    background: var(--hud-bg); border: 1px solid var(--line); border-radius: 999px;
+    font-family: ui-monospace, Menlo, monospace; white-space: nowrap;
+    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+    display: flex; align-items: center; gap: 9px;
+    transition: opacity .4s;
+  }
+  #loadtip.gone { opacity: 0; pointer-events: none; }
+  #loadtip-track {
+    width: 74px; height: 3px; border-radius: 2px;
+    background: rgba(140,180,255,.18); overflow: hidden;
+  }
+  #loadtip-bar {
+    width: 0%; height: 100%; border-radius: 2px;
+    background: linear-gradient(90deg, #4a9eff, #8fd3ff);
+    transition: width .25s ease;
+  }
+
+  #hint {
+    position: fixed; left: 50%; transform: translateX(-50%);
+    font-size: 13px; color: #7f92ad; z-index: 5; letter-spacing: .4px;
+    text-align: center; width: min(92vw, 760px); line-height: 1.6;
+    bottom: max(22px, env(safe-area-inset-bottom));
+  }
+
+  /* 右下工具坞：演示模式下淡到几乎看不见，鼠标移上去才浮现。
+     这是演示模式唯一的出口 —— 没有它就没法切回实况。 */
+  #dock {
+    position: fixed; right: 12px; top: 56px; z-index: 8;
+    display: flex; gap: 6px; align-items: center;
+    transition: opacity .35s ease;
+  }
+  #dock button {
+    font: inherit; font-size: 11.5px; color: #b9cbe4; cursor: pointer;
+    background: rgba(14,24,40,.62); border: 1px solid rgba(140,180,255,.18);
+    border-radius: 999px; padding: 5px 11px; white-space: nowrap;
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+    transition: border-color .2s, color .2s, background .2s;
+  }
+  #dock button:hover { border-color: rgba(140,190,255,.5); color: #eaf3ff; }
+
+  /* 演示模式：默认状态。只留一个极淡的角标，截图时基本看不见 */
+  body.demo #dock { opacity: .16; }
+  body.demo #dock:hover { opacity: 1; }
+
+  /* 演示模式隐藏所有信息性 UI —— 摄像头实况、按钮栏、提示文字、左上数据面板 */
+  body.demo #hud,
+  body.demo #bar,
+  body.demo #hint { display: none !important; }
+  /* 摄像头预览不能 display:none —— 部分浏览器（尤其 iOS Safari）会因此停止解码，
+     手势检测直接失效。移到视口外即可，元素仍参与渲染管线。 */
+  body.demo #cam { position: fixed; left: -9999px; top: 0; opacity: 0; pointer-events: none; }
+
+  #boot {
+    position: fixed; inset: 0; display: grid; place-items: center; z-index: 20;
+    background: #05070d; text-align: center; padding: 24px;
+  }
+  #boot.gone { display: none; }
+  #boot .t { font-size: 14px; color: #90a4c2; }
+  #boot .s { font-size: 12px; color: #5a6b84; margin-top: 8px; font-family: ui-monospace, monospace; }
+  #boot .err { color: #f0a0a0; margin-top: 10px; font-size: 12px; max-width: 420px; line-height: 1.6; }
+
+  /* 启动进度条：真实字节进度，让用户知道还要等多久 */
+  #boot-track {
+    width: min(78vw, 320px); height: 4px; margin: 14px auto 0;
+    background: rgba(140,180,255,.14); border-radius: 2px; overflow: hidden;
+  }
+  #boot-bar {
+    width: 0%; height: 100%; border-radius: 2px;
+    background: linear-gradient(90deg, #4a9eff, #8fd3ff);
+    transition: width .25s ease;
+  }
+  #boot-num {
+    margin-top: 7px; font-size: 11px; color: #4a5a74;
+    font-family: ui-monospace, monospace; min-height: 14px;
+  }
+
+  #drop {
+    position: fixed; inset: 0; z-index: 30; display: none;
+    place-items: center; background: rgba(8,14,26,.86);
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+    font-size: 15px; color: #a8c4e6; border: 2px dashed rgba(120,180,255,.45);
+  }
+  #drop.on { display: grid; }
+
+  /* 手机竖屏：HUD 收缩、预览变小、按钮挪到下方 */
+  @media (max-width: 620px), (pointer: coarse) {
+    #hud { font-size: 10.5px; line-height: 1.55; min-width: 0; padding: 8px 9px; }
+    #state { font-size: 12.5px; }
+    #cam { width: 108px; right: 8px; bottom: max(8px, env(safe-area-inset-bottom)); }
+    #bar { top: auto; bottom: 60px; right: 8px; left: 8px; max-width: none; justify-content: center; }
+    #bar button { padding: 6px 9px; font-size: 11px; }
+    #dock { top: 52px; right: 8px; }
+    #dock button { padding: 4px 9px; font-size: 10.5px; }
+    #hint { font-size: 11.5px; bottom: max(12px, env(safe-area-inset-bottom)); }
+    #hint .desk { display: none; }
+  }
+  @media (min-width: 621px) and (pointer: fine) {
+    #hint .touch { display: none; }
+  }
+</style>
+</head>
+<body class="demo">
+<canvas id="gl"></canvas>
+<video id="cam" playsinline muted autoplay></video>
+
+<div id="hud">
+  <div id="state">初始化…</div>
+  <div><span class="k">open</span> <b id="m-open">-</b>
+       <span class="k">pinch</span> <b id="m-pinch">-</b></div>
+  <div><span class="k">expand</span> <b id="m-prog">0.00</b>
+       <span class="k">fps</span> <b id="m-fps">-</b></div>
+  <div><span class="k">photos</span> <b id="m-photo">-</b>
+       <span class="k">detect</span> <b id="m-detect">-</b></div>
+  <div><span class="k">sound</span> <b id="m-sound">开</b>
+       <span class="k">（M 键切换）</span></div>
+</div>
+
+<div id="bar">
+  <button id="btn-cam" title="切换前后摄像头">切换摄像头</button>
+  <button id="btn-photo" title="选择本地照片">选择照片</button>
+  <button id="btn-dir" title="直接读取本地文件夹，原图不落盘也不上传（仅 Chrome / Edge）" hidden>选文件夹</button>
+  <button id="btn-hud" title="隐藏信息面板">隐藏信息</button>
+  <button id="btn-full" title="全屏">全屏</button>
+</div>
+
+<div id="dock">
+  <button id="btn-mode" title="切到实况模式（D 键）">实况</button>
+  <button id="btn-sound" title="音效开关（M 键）">声音 开</button>
+</div>
+
+<div id="loadtip" class="gone">
+  <span id="loadtip-txt">加载手势模型</span>
+  <span id="loadtip-track"><span id="loadtip-bar"></span></span>
+</div>
+
+<div id="hint">
+  <span class="desk">张开手掌 → 粒子炸开　握拳 → 收拢　移动手 → 树跟着转　展开后拇指食指捏住 → 照片放大，松手收回</span>
+  <span class="touch">张开炸开 · 握拳收拢 · 挥手转向 · 捏住放大照片</span>
+</div>
+
+<div id="boot"><div>
+  <div class="t">正在启动…</div>
+  <div class="s" id="boot-msg">wasm + 模型 ≈ 10MB (gzip)</div>
+  <div id="boot-track"><div id="boot-bar"></div></div>
+  <div id="boot-num"></div>
+  <div class="err" id="boot-err"></div>
+</div></div>
+
+<div id="drop">松手即载入这些照片</div>
+<input id="filepick" type="file" accept="image/*" multiple hidden />
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three.module.js",
+    "three/addons/": "./vendor/jsm/"
+  }
+}
+</script>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>

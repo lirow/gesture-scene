@@ -1,0 +1,32 @@
+{
+  "name": "gesture-scene",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Browser-based hand gesture controlled 3D particle scenes",
+  "type": "module",
+  "license": "MIT",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "postinstall": "node scripts/setup-runtime.mjs",
+    "setup:runtime": "node scripts/setup-runtime.mjs",
+    "setup:model": "node scripts/setup-model.mjs",
+    "serve": "node serve.mjs",
+    "preview": "node serve.mjs dist",
+    "test": "node --test tests/*.test.mjs",
+    "test:browser": "node tests/browser.mjs",
+    "test:camera": "node tests/camera.mjs",
+    "photos": "node scripts/prepare-photos.mjs",
+    "demo:generate": "node scripts/create-demo-photos.mjs",
+    "dist": "node scripts/dist.mjs",
+    "check:repo": "node scripts/check-repo.mjs"
+  },
+  "keywords": ["mediapipe", "threejs", "hand-tracking", "particles", "webgl"],
+  "dependencies": {
+    "@mediapipe/tasks-vision": "1.2.3",
+    "three": "0.170.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "puppeteer-core": "23.11.1"
+  }
+}
