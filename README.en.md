@@ -48,6 +48,10 @@ Preview the full scene without a camera at **http://localhost:8123/scene.html?no
 
 ## Controls
 
+The homepage shows a gesture guide. Both full scenes hide their control panels by default.
+Click the top-right “实况” (Live) button or press `D` to show the camera preview, gesture hints,
+and settings. On mobile, tap the same button.
+
 | Input | Action |
 | --- | --- |
 | Open palm / `O` | Expand particles |

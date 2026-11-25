@@ -113,11 +113,12 @@ try {
     renderer.setSize(width, height);
     camera.aspect = width / height;
     const tangent = Math.tan(THREE.MathUtils.degToRad(43 / 2));
-    const top = document.querySelector('header').getBoundingClientRect().bottom + 28;
-    const bottom = document.querySelector('.controls').getBoundingClientRect().top - 28;
-    const available = Math.max(120, bottom - top);
-    camera.position.z = Math.max(5.7, 1.65 / (tangent * camera.aspect), 1.65 * height / (tangent * available));
-    camera.position.y = ((top + bottom) / 2 - height / 2) * 2 / height * tangent * camera.position.z;
+    const preview = document.getElementById('preview').getBoundingClientRect();
+    const availableHeight = Math.max(120, preview.height - 32);
+    const availableWidth = Math.max(120, preview.width - 32);
+    camera.position.z = Math.max(5.7, 1.65 * height / (tangent * availableWidth), 1.65 * height / (tangent * availableHeight));
+    camera.position.x = (width / 2 - preview.left - preview.width / 2) * 2 / height * tangent * camera.position.z;
+    camera.position.y = (preview.top + scrollY + preview.height / 2 - height / 2) * 2 / height * tangent * camera.position.z;
     camera.updateProjectionMatrix();
     uniforms.uPixelScale.value = height * renderer.getPixelRatio() / (2 * Math.tan(THREE.MathUtils.degToRad(43 / 2)));
     requestDraw();
@@ -144,6 +145,7 @@ try {
     else requestDraw();
   });
   addEventListener('resize', resize);
+  new ResizeObserver(resize).observe(document.getElementById('preview'));
   state.render = () => { cancelAnimationFrame(animation); draw(performance.now()); };
   resize();
 } catch (error) {

@@ -10,21 +10,24 @@
 <style>
   :root { color-scheme: dark; --ink: #f2f4f6; --muted: #a8afb9; --line: #363940; --accent: #ff8dab; }
   * { box-sizing: border-box; }
-  html, body { margin: 0; width: 100%; height: 100%; height: 100dvh; overflow: hidden; background: #08090e; }
-  body { color: var(--ink); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; letter-spacing: 0; }
+  html, body { margin: 0; width: 100%; min-height: 100%; background: #08090e; }
+  body { position: relative; display: flex; flex-direction: column; min-height: 100dvh; color: var(--ink); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; letter-spacing: 0; }
   button, a, input { -webkit-tap-highlight-color: transparent; }
   button, a { font: inherit; }
   button, .enter { min-height: 44px; border-radius: 6px; }
   button { color: inherit; cursor: pointer; }
   a { color: inherit; }
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 5px; }
-  #stage { display: block; position: fixed; inset: 0; width: 100%; height: 100%; touch-action: none; }
-  header { position: absolute; inset: max(28px, env(safe-area-inset-top)) 36px auto; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none; }
+  #stage { display: block; position: absolute; top: 0; left: 0; width: 100%; height: 100dvh; touch-action: pan-y; }
+  header { position: relative; padding: max(28px, env(safe-area-inset-top)) 36px 0; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none; }
   h1 { font-size: 30px; font-weight: 550; line-height: 1.15; margin: 0; }
   .category { margin: 9px 0 0; font-size: 13px; color: var(--muted); }
   #status { padding-top: 8px; font-size: 12px; color: var(--muted); }
   #status::before { content: ""; display: inline-block; width: 5px; height: 5px; margin: 0 8px 2px 0; background: #88d4bc; border-radius: 50%; }
-  .controls { position: absolute; bottom: max(32px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); width: min(620px, calc(100% - 48px)); }
+  .experience { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 56px; flex: 1; padding: 24px 36px max(32px, env(safe-area-inset-bottom)); pointer-events: none; }
+  .showcase { display: flex; flex-direction: column; min-width: 0; }
+  #preview { flex: 1; min-height: 220px; }
+  .controls { width: min(620px, 100%); margin: 0 auto; pointer-events: auto; }
   .caption { margin: 0 0 20px; text-align: center; }
   #scene-name { font-size: 19px; font-weight: 500; margin: 0; }
   .bar { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 14px; border-top: 1px solid var(--line); padding-top: 18px; }
@@ -37,24 +40,52 @@
   .enter:hover { background: var(--accent); }
   .rotation { display: flex; align-items: center; justify-content: center; width: max-content; margin: 18px auto 0; gap: 8px; color: var(--muted); font-size: 12px; cursor: pointer; min-height: 30px; }
   .rotation input { accent-color: #d5e0df; margin: 0; }
+  .guide { align-self: center; pointer-events: auto; }
+  .guide h2 { margin: 0 0 10px; font-size: 18px; font-weight: 550; }
+  .intro, .mode-tip, .keyboard { color: var(--muted); font-size: 13px; line-height: 1.7; }
+  .intro { margin: 0; }
+  .mode-tip { margin: 18px 0; padding-left: 12px; border-left: 2px solid var(--accent); }
+  .mode-tip strong { color: var(--ink); font-weight: 500; }
+  kbd { color: var(--ink); font: inherit; font-family: ui-monospace, monospace; }
+  .gestures { margin: 0; }
+  .gesture { padding: 12px 0; border-top: 1px solid var(--line); }
+  .gesture dt { font-size: 14px; font-weight: 500; line-height: 1.5; }
+  .gesture dd { margin: 3px 0 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+  .keyboard { margin-top: 12px; }
+  .keyboard summary { cursor: pointer; min-height: 32px; }
+  .keyboard p { margin: 4px 0 0; }
   #fallback { display: none; position: absolute; top: 45%; width: 100%; text-align: center; color: var(--muted); padding: 20px; }
   body.unavailable #fallback { display: block; }
-  @media (max-width: 600px) {
-    header { inset: max(24px, env(safe-area-inset-top)) 22px auto; }
+  @media (max-width: 900px) {
+    .experience { gap: 28px; grid-template-columns: minmax(0, 1fr) 270px; }
+    .bar { grid-template-columns: 1fr; justify-items: center; gap: 12px; }
+    .enter { width: 100%; }
+  }
+  @media (max-width: 700px) {
+    header { padding: max(24px, env(safe-area-inset-top)) 22px 0; }
     h1 { font-size: 25px; }
     #status { font-size: 11px; }
-    .controls { bottom: max(22px, env(safe-area-inset-bottom)); width: calc(100% - 36px); }
-    .bar { grid-template-columns: 1fr; justify-items: center; gap: 14px; padding-top: 16px; }
-    .enter { width: 100%; }
-    .caption { margin-bottom: 16px; }
-    .rotation { margin-top: 12px; }
+    .experience { display: flex; flex-direction: column; gap: 28px; padding: 0 22px max(24px, env(safe-area-inset-bottom)); }
+    #preview { flex: none; height: 28dvh; min-height: 170px; max-height: 280px; }
+    .bar { grid-template-columns: 1fr auto; gap: 8px; padding-top: 14px; }
+    .themes button { padding: 0 11px; }
+    .enter { min-width: 0; padding: 0 14px; }
+    .caption { margin-bottom: 14px; }
+    .rotation { margin-top: 10px; }
+    .guide { width: 100%; max-width: 520px; }
+    .gestures { display: grid; grid-template-columns: 1fr 1fr; column-gap: 20px; }
+    .mode-tip { margin: 14px 0 18px; }
   }
   @media (max-height: 520px) {
-    header { top: 18px; }
+    header { padding-top: max(18px, env(safe-area-inset-top)); }
     h1 { font-size: 23px; }
-    .controls { bottom: 14px; }
-    .caption, .rotation { display: none; }
-    .bar { padding-top: 10px; }
+    .experience { padding-bottom: max(18px, env(safe-area-inset-bottom)); }
+  }
+  @media (min-width: 701px) and (max-height: 520px) {
+    .showcase { height: calc(100dvh - 110px); align-self: start; }
+    #preview { min-height: 120px; }
+    .caption { display: none; }
+    .bar { grid-template-columns: 1fr auto; }
   }
 </style>
 </head>
@@ -65,16 +96,38 @@
   <span id="status" role="status">准备中</span>
 </header>
 <p id="fallback">当前浏览器无法显示 3D 预览。</p>
-<main class="controls">
-  <div class="caption"><h2 id="scene-name">粉色爱心</h2></div>
-  <div class="bar">
-    <nav class="themes" aria-label="选择场景">
-      <button type="button" data-theme="heart" aria-pressed="true">爱心</button>
-      <button type="button" data-theme="xmas2026" aria-pressed="false">圣诞树</button>
-    </nav>
-    <a class="enter" id="enter" href="./scene.html?preset=heart">进入爱心场景</a>
-  </div>
-  <label class="rotation"><input id="rotate" type="checkbox" checked>自动旋转</label>
+<main class="experience">
+  <section class="showcase" aria-labelledby="scene-name">
+    <div id="preview" aria-hidden="true"></div>
+    <div class="controls">
+      <div class="caption"><h2 id="scene-name">粉色爱心</h2></div>
+      <div class="bar">
+        <nav class="themes" aria-label="选择场景">
+          <button type="button" data-theme="heart" aria-pressed="true">爱心</button>
+          <button type="button" data-theme="xmas2026" aria-pressed="false">圣诞树</button>
+        </nav>
+        <a class="enter" id="enter" href="./scene.html?preset=heart">进入爱心场景</a>
+      </div>
+      <label class="rotation"><input id="rotate" type="checkbox" checked>自动旋转</label>
+    </div>
+  </section>
+  <section class="guide" aria-labelledby="guide-title">
+    <h2 id="guide-title">进入场景后这样玩</h2>
+    <p class="intro">选择爱心或圣诞树，进入后允许摄像头，等待手势模型就绪，再将手掌放入镜头。</p>
+    <p class="mode-tip"><strong>操作面板默认隐藏</strong><br>点击场景右上角「实况」，或按 <kbd>D</kbd>，即可查看摄像头、动作提示和更多设置。</p>
+    <dl class="gestures">
+      <div class="gesture"><dt>张开手掌</dt><dd>让粒子向外展开</dd></div>
+      <div class="gesture"><dt>握紧拳头</dt><dd>让粒子收拢成形</dd></div>
+      <div class="gesture"><dt>移动手掌</dt><dd>带动场景旋转</dd></div>
+      <div class="gesture"><dt>拇指与食指捏合</dt><dd>展开后捏住放大照片，松开收回</dd></div>
+      <div class="gesture"><dt>快速挥手并松开</dt><dd>将手中的照片甩出</dd></div>
+    </dl>
+    <details class="keyboard">
+      <summary>键盘与鼠标操作</summary>
+      <p><kbd>O</kbd> 展开，<kbd>F</kbd> 收拢；按住 <kbd>P</kbd> 抓取照片，松开收回。拖动画面可旋转。</p>
+      <p>点击场景内声音按钮或按 <kbd>M</kbd> 开关声音；首次出声需要点击或按键。</p>
+    </details>
+  </section>
 </main>
 <noscript><p>需要启用 JavaScript 才能显示粒子场景。</p></noscript>
 <script type="importmap">{"imports":{"three":"./vendor/three.module.js"}}</script>

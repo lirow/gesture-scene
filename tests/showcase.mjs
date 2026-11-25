@@ -7,13 +7,13 @@ const server = await startServer(process.env.TEST_ROOT || 'public');
 const browser = await launchBrowser();
 fs.mkdirSync(path.join(root, 'test-results'), { recursive: true });
 try {
-  for (const width of [1440, 390]) {
+  for (const [width, height] of [[1440, 900], [390, 844], [360, 640], [844, 390]]) {
     const context = await browser.createBrowserContext();
     const page = await context.newPage();
     const errors = [], requests = [];
     page.on('pageerror', error => errors.push(error.message));
     page.on('request', request => requests.push(request.url()));
-    await page.setViewport({ width, height: width === 390 ? 844 : 900, deviceScaleFactor: 1 });
+    await page.setViewport({ width, height, deviceScaleFactor: 1 });
     await page.goto(server.url, { waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => window.__showcase?.ready);
     await page.waitForFunction(() => window.__showcase.frames > 5);
@@ -26,6 +26,19 @@ try {
       return bright;
     });
     assert.ok(pixels > 80, `Particle canvas must be nonblank (${pixels} bright pixels)`);
+    const layout = await page.evaluate(() => {
+      const preview = document.getElementById('preview').getBoundingClientRect();
+      const controls = document.querySelector('.controls').getBoundingClientRect();
+      const guide = document.querySelector('.guide').getBoundingClientRect();
+      const tip = document.querySelector('.mode-tip').getBoundingClientRect();
+      return {
+        separated: preview.bottom <= controls.top && (guide.left >= controls.right || guide.top >= controls.bottom),
+        entryVisible: document.getElementById('enter').getBoundingClientRect().bottom <= innerHeight,
+        tipVisible: tip.bottom <= innerHeight,
+      };
+    });
+    assert.ok(layout.separated, 'Particle area, controls and guide must not overlap');
+    assert.ok(layout.entryVisible && layout.tipVisible, 'Scene entry and hidden-panel guidance must be visible without scrolling');
     await page.screenshot({ path: path.join(root, `test-results/showcase-heart-${width}.png`) });
     await page.click('[data-theme="xmas2026"]');
     await page.waitForFunction(() => window.__showcase.morph === 1);
@@ -34,6 +47,13 @@ try {
     assert.equal(href, process.env.TEST_ROOT === 'dist' ? './xmas.html' : './scene.html?preset=xmas2026');
     await page.screenshot({ path: path.join(root, `test-results/showcase-xmas-${width}.png`) });
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth), width);
+    await page.$eval('.keyboard summary', element => element.scrollIntoView({ block: 'center' }));
+    await page.click('.keyboard summary');
+    assert.equal(await page.$eval('.keyboard', details => details.open), true);
+    await page.$eval('.keyboard p:last-child', element => element.scrollIntoView({ block: 'end' }));
+    assert.ok(await page.$eval('.keyboard p:last-child', element => element.getBoundingClientRect().bottom <= innerHeight + 1), 'Keyboard and sound guidance must remain reachable');
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth), width);
+    await page.evaluate(() => scrollTo(0, 0));
     await page.click('#rotate');
     await page.waitForFunction(() => document.getElementById('status').textContent === '静止');
     const frames = await page.evaluate(() => window.__showcase.frames);
@@ -41,7 +61,7 @@ try {
     assert.equal(await page.evaluate(() => window.__showcase.frames), frames);
     assert.ok(!requests.some(url => /\.wasm|\.task|vision_bundle/.test(url)), 'Homepage must not download the hand runtime or model');
     assert.deepEqual(errors, []);
-    console.log(`PASS showcase ${width}px: rendered pixels, motion, switch, pause, link, zero model requests`);
+    console.log(`PASS showcase ${width}x${height}: visible guide, reachable details, layout, rendered pixels, switch, pause, link, zero model requests`);
     await context.close();
   }
   const context = await browser.createBrowserContext();
